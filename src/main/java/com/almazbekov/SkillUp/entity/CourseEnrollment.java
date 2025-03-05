@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -27,6 +28,7 @@ public class CourseEnrollment {
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
+    @CreationTimestamp
     @Column(name = "enrolled_at")
     private LocalDateTime enrolledAt = LocalDateTime.now();
 }

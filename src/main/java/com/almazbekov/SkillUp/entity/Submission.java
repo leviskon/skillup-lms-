@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +31,7 @@ public class Submission {
     @Column(nullable = false)
     private String fileUrl;
 
+    @CreationTimestamp
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt = LocalDateTime.now();
 }
