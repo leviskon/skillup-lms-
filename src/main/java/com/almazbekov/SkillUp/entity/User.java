@@ -18,6 +18,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -38,4 +39,6 @@ public class User {
     @UpdateTimestamp // Автоматически обновляет при изменении
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 }
