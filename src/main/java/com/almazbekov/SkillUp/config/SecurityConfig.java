@@ -10,6 +10,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,12 +44,15 @@ public class SecurityConfig {
                                            DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
         http
                 .authenticationProvider(daoAuthenticationProvider)
-                .csrf(AbstractHttpConfigurer::disable) // Отключаем CSRF для REST API
+                .csrf(AbstractHttpConfigurer::disable) // Правильный способ отключить CSRF в Spring Security 6
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Эндпоинты регистрации/логина доступны без аутентификации
+                                .requestMatchers("/api/main").hasAuthority("STUDENT")
                         .anyRequest().authenticated()
+//                        .anyRequest().permitAll()
                 )
-                .httpBasic(Customizer.withDefaults()); // Используем HTTP Basic-аутентификацию
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }

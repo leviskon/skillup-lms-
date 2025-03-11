@@ -69,9 +69,10 @@ public class AuthController {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Сохраняем в сессии
+        // Сохраняем пользователя в сессии
         session.setAttribute("user", user);
 
+        // Дополнительно можно установить атрибут в SecurityContext
         return ResponseEntity.ok("Вход выполнен успешно!");
     }
 
