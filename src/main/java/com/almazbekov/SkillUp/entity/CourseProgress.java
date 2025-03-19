@@ -1,8 +1,6 @@
 package com.almazbekov.SkillUp.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,30 +11,34 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "grades")
+@Table(name = "course_progress", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"student_id", "course_id"})
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Grade {
+public class CourseProgress {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "submission_id", nullable = false)
-    private Submission submission;
-
-    @Column(nullable = false)
-    @Min(0)
-    @Max(100)
-    private Integer grade;
-
-    private String feedback;
+    @ManyToOne
+    @JoinColumn(name = "student_id", nullable = false)
+    private User student;
 
     @ManyToOne
-    @JoinColumn(name = "graded_by", nullable = false)
-    private User gradedBy;
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
+
+    @Column(name = "completed_materials")
+    private Integer completedMaterials = 0;
+
+    @Column(name = "total_materials")
+    private Integer totalMaterials = 0;
+
+    @Column(name = "last_accessed_at")
+    private LocalDateTime lastAccessedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -45,6 +47,4 @@ public class Grade {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-}
-
-
+} 

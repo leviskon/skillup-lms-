@@ -1,50 +1,42 @@
 package com.almazbekov.SkillUp.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "grades")
+@Table(name = "notifications")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Grade {
+public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "submission_id", nullable = false)
-    private Submission submission;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false)
-    @Min(0)
-    @Max(100)
-    private Integer grade;
+    private String title;
 
-    private String feedback;
+    @Column(nullable = false)
+    private String message;
 
-    @ManyToOne
-    @JoinColumn(name = "graded_by", nullable = false)
-    private User gradedBy;
+    @Column(nullable = false)
+    private String type;
+
+    @Column(name = "is_read")
+    private boolean isRead = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-}
-
-
+} 

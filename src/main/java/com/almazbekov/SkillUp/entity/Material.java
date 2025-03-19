@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -29,14 +30,30 @@ public class Material {
     private MaterialType type;
 
     @Column(nullable = false)
+    private String title;
+
+    private String description;
+
+    @Column(nullable = false)
     private String url;
+
+    @Column(name = "order_index")
+    private Integer orderIndex = 0;
+
+    private Integer duration;
+
+    @Column(name = "is_published")
+    private boolean isPublished = false;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
-    @CreationTimestamp
+    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 }
 

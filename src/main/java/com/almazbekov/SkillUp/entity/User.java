@@ -28,6 +28,9 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
