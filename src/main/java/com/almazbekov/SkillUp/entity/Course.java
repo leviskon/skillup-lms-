@@ -47,7 +47,7 @@ public class Course {
 
     @ManyToOne
     @JoinColumn(name = "teacher_id", nullable = false)
-    private User teacher;
+    private Teacher teacher;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

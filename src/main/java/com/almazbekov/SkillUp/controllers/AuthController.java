@@ -6,8 +6,12 @@ import com.almazbekov.SkillUp.entity.Role;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.repository.RoleRepository;
 import com.almazbekov.SkillUp.repository.UserRepository;
+import com.almazbekov.SkillUp.services.TeacherService;
 import com.almazbekov.SkillUp.services.UserService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -35,9 +39,12 @@ public class AuthController {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final TeacherService teacherService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpSession session) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, 
+                                 HttpSession session,
+                                 HttpServletResponse httpResponse) {
         try {
             // Аутентифицируем пользователя
             Authentication authentication = authenticationManager.authenticate(
@@ -51,19 +58,51 @@ public class AuthController {
 
             // Сохраняем пользователя в сессии
             session.setAttribute("user", user);
+            
+            // Устанавливаем время жизни сессии
+            session.setMaxInactiveInterval(3600); // 1 час
+
+            // Создаем куки с правильными параметрами
+            Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
+            sessionCookie.setPath("/");
+            sessionCookie.setHttpOnly(true);
+            sessionCookie.setMaxAge(3600); // 1 час
+            sessionCookie.setSecure(false); // установите true если используете HTTPS
+            sessionCookie.setDomain("localhost"); // Добавляем домен
+            httpResponse.addCookie(sessionCookie);
+
+            // Логируем информацию о сессии и куках
+            System.out.println("=== Информация о сессии после логина ===");
+            System.out.println("ID сессии: " + session.getId());
+            System.out.println("Время создания сессии: " + session.getCreationTime());
+            System.out.println("Последний доступ к сессии: " + session.getLastAccessedTime());
+            System.out.println("Максимальное время неактивности: " + session.getMaxInactiveInterval());
+            System.out.println("Пользователь в сессии: " + session.getAttribute("user"));
+            
+            System.out.println("\n=== Куки после логина ===");
+            System.out.println("JSESSIONID = " + session.getId());
+            System.out.println("Path = /");
+            System.out.println("HttpOnly = true");
+            System.out.println("MaxAge = 3600");
+            System.out.println("Domain = localhost");
 
             // Создаем ответ с данными пользователя
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                .header("Set-Cookie", "JSESSIONID=" + session.getId() + "; Path=/; HttpOnly; Max-Age=3600; Domain=localhost")
+                .body(response);
         } catch (AuthenticationException e) {
             return ResponseEntity.badRequest().body("Неверный email или пароль");
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request, HttpSession session) {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request, 
+                                        HttpSession session,
+                                        HttpServletRequest httpRequest,
+                                        HttpServletResponse httpResponse) {
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body("Email уже зарегистрирован");
         }
@@ -81,8 +120,39 @@ public class AuthController {
 
         userRepository.save(user);
 
+        // Если пользователь регистрируется как учитель, создаем запись в таблице teachers
+        if ("TEACHER".equals(request.getRole())) {
+            teacherService.createTeacher(user);
+        }
+
         // Сохраняем пользователя в сессии
         session.setAttribute("user", user);
+
+        // Логируем информацию о сессии и куках
+        System.out.println("=== Информация о сессии после регистрации ===");
+        System.out.println("ID сессии: " + session.getId());
+        System.out.println("Время создания сессии: " + session.getCreationTime());
+        System.out.println("Последний доступ к сессии: " + session.getLastAccessedTime());
+        System.out.println("Максимальное время неактивности: " + session.getMaxInactiveInterval());
+        System.out.println("Пользователь в сессии: " + session.getAttribute("user"));
+        
+        // Логируем все куки
+        System.out.println("\n=== Куки после регистрации ===");
+        Cookie[] cookies = httpRequest.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                System.out.println("Имя куки: " + cookie.getName());
+                System.out.println("Значение куки: " + cookie.getValue());
+                System.out.println("Домен: " + cookie.getDomain());
+                System.out.println("Путь: " + cookie.getPath());
+                System.out.println("Максимальный возраст: " + cookie.getMaxAge());
+                System.out.println("HttpOnly: " + cookie.isHttpOnly());
+                System.out.println("Secure: " + cookie.getSecure());
+                System.out.println("---");
+            }
+        } else {
+            System.out.println("Куки не найдены");
+        }
 
         // Создаем ответ с данными пользователя
         Map<String, Object> response = new HashMap<>();
@@ -105,5 +175,4 @@ public class AuthController {
         }
         return ResponseEntity.ok(user);
     }
-
 }

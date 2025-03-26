@@ -7,4 +7,7 @@
 
     <include file="db/changelog/changes/01-init-schema.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/02-corse-module.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/03-teachers-add.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/04-correcting-teacherid.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/05-correcting-tags.sql" relativeToChangelogFile="false"/>
 </databaseChangeLog> 

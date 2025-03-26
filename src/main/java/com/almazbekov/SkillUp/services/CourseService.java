@@ -2,8 +2,10 @@ package com.almazbekov.SkillUp.services;
 
 import com.almazbekov.SkillUp.DTO.CourseCreateDTO;
 import com.almazbekov.SkillUp.entity.Course;
+import com.almazbekov.SkillUp.entity.Teacher;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.repository.CourseRepository;
+import com.almazbekov.SkillUp.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,9 +19,13 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final FileStorageService fileStorageService;
+    private final TeacherRepository teacherRepository;
 
     @Transactional
-    public Course createCourse(CourseCreateDTO courseDTO, User teacher) throws IOException {
+    public Course createCourse(CourseCreateDTO courseDTO, User user) throws IOException {
+        Teacher teacher = teacherRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("User is not a teacher"));
+
         Course course = new Course();
         course.setName(courseDTO.getName());
         course.setDescription(courseDTO.getDescription());
