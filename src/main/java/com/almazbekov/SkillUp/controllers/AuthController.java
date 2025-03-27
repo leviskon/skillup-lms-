@@ -6,7 +6,6 @@ import com.almazbekov.SkillUp.entity.Role;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.repository.RoleRepository;
 import com.almazbekov.SkillUp.repository.UserRepository;
-import com.almazbekov.SkillUp.services.TeacherService;
 import com.almazbekov.SkillUp.services.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Cookie;
@@ -39,7 +38,6 @@ public class AuthController {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final TeacherService teacherService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request, 
@@ -119,11 +117,6 @@ public class AuthController {
         user.setRole(roleOptional.get());
 
         userRepository.save(user);
-
-        // Если пользователь регистрируется как учитель, создаем запись в таблице teachers
-        if ("TEACHER".equals(request.getRole())) {
-            teacherService.createTeacher(user);
-        }
 
         // Сохраняем пользователя в сессии
         session.setAttribute("user", user);

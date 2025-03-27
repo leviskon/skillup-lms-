@@ -2,16 +2,15 @@ package com.almazbekov.SkillUp.services;
 
 import com.almazbekov.SkillUp.DTO.CourseCreateDTO;
 import com.almazbekov.SkillUp.entity.Course;
-import com.almazbekov.SkillUp.entity.Teacher;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.repository.CourseRepository;
-import com.almazbekov.SkillUp.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,12 +18,13 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final FileStorageService fileStorageService;
-    private final TeacherRepository teacherRepository;
 
     @Transactional
     public Course createCourse(CourseCreateDTO courseDTO, User user) throws IOException {
-        Teacher teacher = teacherRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("User is not a teacher"));
+        // Проверяем, является ли пользователь учителем
+        if (!"TEACHER".equals(user.getRole().getName())) {
+            throw new RuntimeException("User is not a teacher");
+        }
 
         Course course = new Course();
         course.setName(courseDTO.getName());
@@ -32,7 +32,7 @@ public class CourseService {
         course.setLevel(courseDTO.getLevel());
         course.setCategory(courseDTO.getCategory());
         course.setTags(courseDTO.getTags());
-        course.setTeacher(teacher);
+        course.setTeacher(user);
         course.setTotalStudents(0);
         course.setPublished(false);
 
@@ -81,5 +81,9 @@ public class CourseService {
         }
 
         courseRepository.delete(course);
+    }
+
+    public List<Course> getCoursesByTeacherId(Long teacherId) {
+        return courseRepository.findByTeacherId(teacherId);
     }
 } 

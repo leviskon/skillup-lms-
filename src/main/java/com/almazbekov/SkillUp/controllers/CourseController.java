@@ -6,15 +6,13 @@ import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.services.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -71,5 +69,10 @@ public class CourseController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long courseId) throws IOException {
         courseService.deleteCourse(courseId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/teacher/{teacherId}")
+    public ResponseEntity<List<Course>> getCoursesByTeacherId(@PathVariable Long teacherId) {
+        return ResponseEntity.ok(courseService.getCoursesByTeacherId(teacherId));
     }
 } 
