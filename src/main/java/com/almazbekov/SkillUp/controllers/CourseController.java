@@ -2,7 +2,6 @@ package com.almazbekov.SkillUp.controllers;
 
 import com.almazbekov.SkillUp.DTO.CourseCreateDTO;
 import com.almazbekov.SkillUp.DTO.CourseDTO;
-import com.almazbekov.SkillUp.entity.Course;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.services.CourseService;
 import lombok.RequiredArgsConstructor;
