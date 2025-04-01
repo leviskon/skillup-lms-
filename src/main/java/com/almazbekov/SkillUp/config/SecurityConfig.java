@@ -51,6 +51,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/courses").permitAll()
                         .requestMatchers("/api/courses/{courseId}").permitAll()
                         .requestMatchers("/api/courses/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/courses/images/**").permitAll()
+                        .requestMatchers("/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -75,12 +78,24 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "X-Requested-With", 
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // 1 час
+        configuration.setMaxAge(3600L);
         
-        // Добавляем заголовки для куки
-        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
+        // Добавляем заголовки для куки и изображений
+        configuration.setExposedHeaders(Arrays.asList(
+            "Set-Cookie",
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
+        ));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

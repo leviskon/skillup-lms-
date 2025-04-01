@@ -1,6 +1,7 @@
 package com.almazbekov.SkillUp.controllers;
 
 import com.almazbekov.SkillUp.DTO.CourseCreateDTO;
+import com.almazbekov.SkillUp.DTO.CourseDTO;
 import com.almazbekov.SkillUp.entity.Course;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.services.CourseService;
@@ -22,7 +23,7 @@ public class CourseController {
     private final CourseService courseService;
 
     @PostMapping
-    public ResponseEntity<Course> createCourse(
+    public ResponseEntity<CourseDTO> createCourse(
             @ModelAttribute CourseCreateDTO courseDTO,
             HttpSession session,
             HttpServletRequest request) throws IOException {
@@ -59,20 +60,57 @@ public class CourseController {
     }
 
     @PutMapping("/{courseId}")
-    public ResponseEntity<Course> updateCourse(
+    public ResponseEntity<CourseDTO> updateCourse(
             @PathVariable Long courseId,
             @ModelAttribute CourseCreateDTO courseDTO) throws IOException {
         return ResponseEntity.ok(courseService.updateCourse(courseId, courseDTO));
     }
 
     @DeleteMapping("/{courseId}")
-    public ResponseEntity<Void> deleteCourse(@PathVariable Long courseId) throws IOException {
+    public ResponseEntity<Void> deleteCourse(
+            @PathVariable Long courseId,
+            HttpSession session) throws IOException {
+        
+        // Получаем пользователя из сессии
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            throw new IllegalStateException("Ошибка: пользователь не аутентифицирован. Необходимо войти в систему.");
+        }
+
+        // Проверяем, является ли пользователь преподавателем
+        if (!"TEACHER".equals(user.getRole().getName())) {
+            throw new IllegalStateException("Ошибка: доступ запрещен. Только преподаватели могут удалять курсы.");
+        }
+
         courseService.deleteCourse(courseId);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/teacher/{teacherId}")
-    public ResponseEntity<List<Course>> getCoursesByTeacherId(@PathVariable Long teacherId) {
-        return ResponseEntity.ok(courseService.getCoursesByTeacherId(teacherId));
+    @GetMapping("/my-courses")
+    public ResponseEntity<List<CourseDTO>> getMyCourses(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            throw new IllegalStateException("Ошибка: пользователь не аутентифицирован. Необходимо войти в систему.");
+        }
+
+        // Проверяем, является ли пользователь преподавателем
+        if (!"TEACHER".equals(user.getRole().getName())) {
+            throw new IllegalStateException("Ошибка: доступ запрещен. Только преподаватели могут просматривать свои курсы.");
+        }
+
+        return ResponseEntity.ok(courseService.getCoursesByUserId(user.getId()));
+    }
+
+    @GetMapping("/{courseId}")
+    public ResponseEntity<CourseDTO> getCourseById(
+            @PathVariable Long courseId,
+            HttpSession session) {
+        // Получаем пользователя из сессии
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            throw new IllegalStateException("Ошибка: пользователь не аутентифицирован. Необходимо войти в систему.");
+        }
+
+        return ResponseEntity.ok(courseService.getCourseById(courseId));
     }
 } 

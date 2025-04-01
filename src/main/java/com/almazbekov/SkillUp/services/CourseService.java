@@ -1,6 +1,7 @@
 package com.almazbekov.SkillUp.services;
 
 import com.almazbekov.SkillUp.DTO.CourseCreateDTO;
+import com.almazbekov.SkillUp.DTO.CourseDTO;
 import com.almazbekov.SkillUp.entity.Course;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.repository.CourseRepository;
@@ -11,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +22,7 @@ public class CourseService {
     private final FileStorageService fileStorageService;
 
     @Transactional
-    public Course createCourse(CourseCreateDTO courseDTO, User user) throws IOException {
+    public CourseDTO createCourse(CourseCreateDTO courseDTO, User user) throws IOException {
         // Проверяем, является ли пользователь учителем
         if (!"TEACHER".equals(user.getRole().getName())) {
             throw new RuntimeException("User is not a teacher");
@@ -31,8 +33,7 @@ public class CourseService {
         course.setDescription(courseDTO.getDescription());
         course.setLevel(courseDTO.getLevel());
         course.setCategory(courseDTO.getCategory());
-        course.setTags(courseDTO.getTags());
-        course.setTeacher(user);
+        course.setUser(user);
         course.setTotalStudents(0);
         course.setPublished(false);
 
@@ -42,11 +43,11 @@ public class CourseService {
             course.setImageUrl(imageUrl);
         }
 
-        return courseRepository.save(course);
+        return convertToDTO(courseRepository.save(course));
     }
 
     @Transactional
-    public Course updateCourse(Long courseId, CourseCreateDTO courseDTO) throws IOException {
+    public CourseDTO updateCourse(Long courseId, CourseCreateDTO courseDTO) throws IOException {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
 
@@ -54,7 +55,6 @@ public class CourseService {
         course.setDescription(courseDTO.getDescription());
         course.setLevel(courseDTO.getLevel());
         course.setCategory(courseDTO.getCategory());
-        course.setTags(courseDTO.getTags());
 
         // Обновляем изображение курса
         if (courseDTO.getImageFile() != null) {
@@ -67,7 +67,7 @@ public class CourseService {
             course.setImageUrl(imageUrl);
         }
 
-        return courseRepository.save(course);
+        return convertToDTO(courseRepository.save(course));
     }
 
     @Transactional
@@ -83,7 +83,32 @@ public class CourseService {
         courseRepository.delete(course);
     }
 
-    public List<Course> getCoursesByTeacherId(Long teacherId) {
-        return courseRepository.findByTeacherId(teacherId);
+    public List<CourseDTO> getCoursesByUserId(Long userId) {
+        return courseRepository.findByUserId(userId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public CourseDTO getCourseById(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+        return convertToDTO(course);
+    }
+
+    private CourseDTO convertToDTO(Course course) {
+        CourseDTO dto = new CourseDTO();
+        dto.setId(course.getId());
+        dto.setName(course.getName());
+        dto.setDescription(course.getDescription());
+        dto.setImageUrl(course.getImageUrl());
+        dto.setPublished(course.isPublished());
+        dto.setLevel(course.getLevel());
+        dto.setCategory(course.getCategory());
+        dto.setTotalStudents(course.getTotalStudents());
+        dto.setUserId(course.getUser().getId());
+        dto.setUserName(course.getUser().getName());
+        dto.setCreatedAt(course.getCreatedAt());
+        dto.setUpdatedAt(course.getUpdatedAt());
+        return dto;
     }
 } 
