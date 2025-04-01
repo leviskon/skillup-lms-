@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,11 +45,20 @@ public class AuthController {
                                  HttpSession session,
                                  HttpServletResponse httpResponse) {
         try {
+            // Устанавливаем стратегию сохранения контекста безопасности
+            SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+
             // Аутентифицируем пользователя
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            // Создаем и устанавливаем контекст безопасности
+            SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+            securityContext.setAuthentication(authentication);
+            SecurityContextHolder.setContext(securityContext);
+
+            // Сохраняем контекст безопасности в сессии
+            session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 
             // Получаем пользователя
             User user = userRepository.findByEmail(request.getEmail())
@@ -76,6 +86,8 @@ public class AuthController {
             System.out.println("Последний доступ к сессии: " + session.getLastAccessedTime());
             System.out.println("Максимальное время неактивности: " + session.getMaxInactiveInterval());
             System.out.println("Пользователь в сессии: " + session.getAttribute("user"));
+            System.out.println("Аутентификация: " + authentication);
+            System.out.println("Роли: " + authentication.getAuthorities());
             
             System.out.println("\n=== Куки после логина ===");
             System.out.println("JSESSIONID = " + session.getId());
