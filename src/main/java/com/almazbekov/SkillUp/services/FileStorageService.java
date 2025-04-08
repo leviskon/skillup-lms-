@@ -5,17 +5,22 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
 @Slf4j
 public class FileStorageService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
     private final Path fileStorageLocation;
 
     public FileStorageService() {
@@ -31,12 +36,19 @@ public class FileStorageService {
 
     public String storeFile(MultipartFile file, String subDirectory) throws IOException {
         log.info("Сохранение файла в директорию: {}", subDirectory);
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path targetLocation = this.fileStorageLocation.resolve(subDirectory).resolve(fileName);
-        Files.createDirectories(targetLocation.getParent());
-        Files.copy(file.getInputStream(), targetLocation);
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String newFilename = UUID.randomUUID().toString() + fileExtension;
+
+        Path uploadPath = Paths.get(uploadDir, subDirectory).toAbsolutePath().normalize();
+        
+        Files.createDirectories(uploadPath);
+
+        Path targetLocation = uploadPath.resolve(newFilename);
+        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
         log.info("Файл успешно сохранен: {}", targetLocation);
-        return subDirectory + "/" + fileName;
+        return newFilename;
     }
 
     public void deleteFile(String fileUrl) throws IOException {

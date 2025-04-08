@@ -1,5 +1,6 @@
 package com.almazbekov.SkillUp.services;
 
+import com.almazbekov.SkillUp.DTO.UserUpdateDTO;
 import com.almazbekov.SkillUp.entity.Role;
 import com.almazbekov.SkillUp.entity.User;
 import com.almazbekov.SkillUp.repository.RoleRepository;
@@ -11,6 +12,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -23,6 +27,9 @@ public class UserService implements UserDetailsService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     /**
      * Метод для регистрации нового пользователя.
@@ -65,5 +72,42 @@ public class UserService implements UserDetailsService {
                 user.getPassword(),
                 AuthorityUtils.createAuthorityList(user.getRole().getName())
         );
+    }
+
+    /**
+     * Метод для обновления профиля пользователя
+     */
+    public User updateUserProfile(Long userId, UserUpdateDTO updateDTO) throws IOException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        // Проверяем, не занят ли email другим пользователем
+        if (updateDTO.getEmail() != null && !updateDTO.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(updateDTO.getEmail())) {
+                throw new RuntimeException("Email уже занят");
+            }
+            user.setEmail(updateDTO.getEmail());
+        }
+
+        // Обновляем имя, если оно предоставлено
+        if (updateDTO.getName() != null) {
+            user.setName(updateDTO.getName());
+        }
+
+        // Обрабатываем загрузку аватара
+        if (updateDTO.getAvatarFile() != null && !updateDTO.getAvatarFile().isEmpty()) {
+            String avatarUrl = fileStorageService.storeFile(updateDTO.getAvatarFile(), "avatars");
+            user.setAvatarUrl("/avatars/" + avatarUrl);
+        }
+
+        return userRepository.save(user);
+    }
+
+    /**
+     * Метод для получения информации о пользователе
+     */
+    public User getUserProfile(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
     }
 }
