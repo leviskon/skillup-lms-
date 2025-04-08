@@ -22,7 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-
 import java.util.Arrays;
 
 @Configuration
@@ -73,27 +72,34 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(true))
-                .exceptionHandling(ex -> ex
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(-1)
+                        .maxSessionsPreventsLogin(false))
+                .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             System.out.println("\n=== Ошибка аутентификации ===");
                             System.out.println("URL: " + request.getRequestURL());
+                            System.out.println("Метод: " + request.getMethod());
                             System.out.println("Ошибка: " + authException.getMessage());
+                            System.out.println("Сессия: " + request.getSession(false));
+                            System.out.println("Куки: " + Arrays.toString(request.getCookies()));
                             System.out.println("=== Конец ошибки аутентификации ===\n");
+                            response.sendError(401, "Unauthorized");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             System.out.println("\n=== Ошибка доступа ===");
                             System.out.println("URL: " + request.getRequestURL());
+                            System.out.println("Метод: " + request.getMethod());
                             System.out.println("Ошибка: " + accessDeniedException.getMessage());
-                            
                             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                             if (auth != null) {
                                 System.out.println("Пользователь: " + auth.getPrincipal());
                                 System.out.println("Роли: " + auth.getAuthorities());
                             }
-                            System.out.println("=== Конец ошибки доступа ===\n");
+                            System.out.println("Сессия: " + request.getSession(false));
+                            System.out.println("Куки: " + Arrays.toString(request.getCookies()));
+                            System.out.println("=== Конеец ошибки доступа ===\n");
+                            response.sendError(403, "Forbidden");
                         }));
 
         return http.build();
@@ -123,7 +129,7 @@ public class SecurityConfig {
             "Access-Control-Request-Headers"
         ));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setMaxAge(86400L); // 24 часа
         
         configuration.setExposedHeaders(Arrays.asList(
             "Set-Cookie",

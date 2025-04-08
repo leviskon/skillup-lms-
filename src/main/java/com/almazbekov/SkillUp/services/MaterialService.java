@@ -8,11 +8,13 @@ import com.almazbekov.SkillUp.repository.CourseRepository;
 import com.almazbekov.SkillUp.repository.MaterialRepository;
 import com.almazbekov.SkillUp.repository.MaterialTypeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -36,8 +38,6 @@ public class MaterialService {
         material.setType(materialType);
         material.setTitle(materialDTO.getTitle());
         material.setDescription(materialDTO.getDescription());
-        material.setOrderIndex(materialDTO.getOrderIndex());
-        material.setDuration(materialDTO.getDuration());
         material.setPublished(false);
 
         // Определяем поддиректорию в зависимости от типа материала
@@ -64,8 +64,6 @@ public class MaterialService {
 
         material.setTitle(materialDTO.getTitle());
         material.setDescription(materialDTO.getDescription());
-        material.setOrderIndex(materialDTO.getOrderIndex());
-        material.setDuration(materialDTO.getDuration());
 
         // Обновляем файл, если он был изменен
         if (materialDTO.getFile() != null) {
@@ -99,5 +97,27 @@ public class MaterialService {
         fileStorageService.deleteFile(material.getUrl());
 
         materialRepository.delete(material);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Material> getMaterialsByCourse(Long courseId) {
+        return materialRepository.findByCourseId(courseId);
+    }
+
+    @Transactional(readOnly = true)
+    public Material getMaterialById(Long materialId) {
+        return materialRepository.findById(materialId)
+                .orElseThrow(() -> new RuntimeException("Материал не найден"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Material> getMaterialsByCourseAndType(Long courseId, Long typeId) {
+        return materialRepository.findByCourseIdAndTypeId(courseId, typeId);
+    }
+
+    @Transactional(readOnly = true)
+    public Resource getMaterialFile(Long materialId) throws IOException {
+        Material material = getMaterialById(materialId);
+        return fileStorageService.loadFileAsResource(material.getUrl());
     }
 } 

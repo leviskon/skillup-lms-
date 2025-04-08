@@ -11,4 +11,5 @@
     <include file="db/changelog/changes/04-correcting-teacherid.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/05-correcting-tags.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/06-correcting-courses.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/07-remove-material-fields.sql" relativeToChangelogFile="false"/>
 </databaseChangeLog> 

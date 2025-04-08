@@ -45,9 +45,6 @@ public class AuthController {
                                  HttpSession session,
                                  HttpServletResponse httpResponse) {
         try {
-            // Устанавливаем стратегию сохранения контекста безопасности
-            SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
-
             // Аутентифицируем пользователя
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -67,16 +64,16 @@ public class AuthController {
             // Сохраняем пользователя в сессии
             session.setAttribute("user", user);
             
-            // Устанавливаем время жизни сессии
-            session.setMaxInactiveInterval(3600); // 1 час
+            // Устанавливаем время жизни сессии (24 часа)
+            session.setMaxInactiveInterval(86400);
 
             // Создаем куки с правильными параметрами
             Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
             sessionCookie.setPath("/");
             sessionCookie.setHttpOnly(true);
-            sessionCookie.setMaxAge(3600); // 1 час
-            sessionCookie.setSecure(false); // установите true если используете HTTPS
-            sessionCookie.setDomain("localhost"); // Добавляем домен
+            sessionCookie.setMaxAge(86400); // 24 часа
+            sessionCookie.setSecure(false);
+            sessionCookie.setDomain("localhost");
             httpResponse.addCookie(sessionCookie);
 
             // Логируем информацию о сессии и куках
@@ -93,7 +90,7 @@ public class AuthController {
             System.out.println("JSESSIONID = " + session.getId());
             System.out.println("Path = /");
             System.out.println("HttpOnly = true");
-            System.out.println("MaxAge = 3600");
+            System.out.println("MaxAge = 86400");
             System.out.println("Domain = localhost");
 
             // Создаем ответ с данными пользователя
@@ -101,7 +98,7 @@ public class AuthController {
             response.put("user", user);
 
             return ResponseEntity.ok()
-                .header("Set-Cookie", "JSESSIONID=" + session.getId() + "; Path=/; HttpOnly; Max-Age=3600; Domain=localhost")
+                .header("Set-Cookie", "JSESSIONID=" + session.getId() + "; Path=/; HttpOnly; Max-Age=86400; Domain=localhost")
                 .body(response);
         } catch (AuthenticationException e) {
             return ResponseEntity.badRequest().body("Неверный email или пароль");

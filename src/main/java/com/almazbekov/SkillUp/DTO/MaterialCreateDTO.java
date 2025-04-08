@@ -10,6 +10,4 @@ public class MaterialCreateDTO {
     private String title;
     private String description;
     private MultipartFile file;
-    private Integer orderIndex;
-    private Integer duration;
 } 

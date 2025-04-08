@@ -1,5 +1,6 @@
 package com.almazbekov.SkillUp.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,11 +38,6 @@ public class Material {
 
     @Column(nullable = false)
     private String url;
-
-    @Column(name = "order_index")
-    private Integer orderIndex = 0;
-
-    private Integer duration;
 
     @Column(name = "is_published")
     private boolean isPublished = false;
