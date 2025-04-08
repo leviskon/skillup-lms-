@@ -19,6 +19,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Files;
 
 @RestController
 @RequestMapping("/api/materials")
@@ -27,6 +29,7 @@ public class MaterialController {
 
     private final MaterialService materialService;
     private static final Logger log = LoggerFactory.getLogger(MaterialController.class);
+    private final ObjectMapper objectMapper;
 
     @GetMapping("/course/{courseId}")
     public ResponseEntity<List<Material>> getMaterialsByCourse(@PathVariable Long courseId) {
@@ -64,19 +67,53 @@ public class MaterialController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{materialId}/file")
+    @GetMapping("/{materialId}/file/{fileIndex}")
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<Resource> getMaterialFile(@PathVariable Long materialId) throws IOException {
-        log.info("Получение файла для материала с ID: {}", materialId);
+    public ResponseEntity<Resource> getMaterialFile(
+            @PathVariable Long materialId,
+            @PathVariable int fileIndex) throws IOException {
+        log.info("Получение файла {} для материала с ID: {}", fileIndex, materialId);
         
         Material material = materialService.getMaterialById(materialId);
-        log.info("Найден материал: {}", material);
+        if (material == null) {
+            log.error("Материал с ID {} не найден", materialId);
+            return ResponseEntity.notFound().build();
+        }
         
-        Resource file = materialService.getMaterialFile(materialId);
-        log.info("Файл получен: {}", file);
+        List<String> urls;
+        try {
+            urls = objectMapper.readValue(material.getUrl(), List.class);
+        } catch (Exception e) {
+            log.error("Ошибка при чтении URL файлов: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
         
-        String contentType = determineContentType(material);
-        log.info("Определен MIME-тип: {}", contentType);
+        if (urls == null || urls.isEmpty()) {
+            log.error("Нет файлов для материала с ID {}", materialId);
+            return ResponseEntity.notFound().build();
+        }
+        
+        if (fileIndex < 0 || fileIndex >= urls.size()) {
+            log.error("Неверный индекс файла: {} для материала с ID {}", fileIndex, materialId);
+            return ResponseEntity.badRequest().build();
+        }
+        
+        Resource file = materialService.getMaterialFile(materialId, fileIndex);
+        if (file == null || !file.exists()) {
+            log.error("Файл не найден для материала с ID {} и индексом {}", materialId, fileIndex);
+            return ResponseEntity.notFound().build();
+        }
+        
+        String contentType;
+        try {
+            contentType = Files.probeContentType(file.getFile().toPath());
+            if (contentType == null) {
+                contentType = determineContentType(material);
+            }
+        } catch (Exception e) {
+            log.warn("Не удалось определить MIME-тип файла: {}", e.getMessage());
+            contentType = determineContentType(material);
+        }
         
         String encodedFileName = URLEncoder.encode(material.getTitle(), StandardCharsets.UTF_8)
             .replaceAll("\\+", "%20");
@@ -100,50 +137,37 @@ public class MaterialController {
 
     private String determineContentType(Material material) {
         log.info("Определение MIME-типа для материала: {}", material);
-        String typeName = material.getType().getName().toUpperCase();
-        String fileName = material.getUrl().toLowerCase();
+        String fileName = material.getTitle().toLowerCase();
         
-        log.info("Анализ файла: {}", fileName);
-        
-        switch (typeName) {
-            case "VIDEO":
-                return "video/mp4";
-            case "DOCUMENT":
-                if (fileName.endsWith(".pdf")) {
-                    return "application/pdf";
-                } else if (fileName.endsWith(".docx")) {
-                    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-                } else if (fileName.endsWith(".doc")) {
-                    return "application/msword";
-                } else if (fileName.endsWith(".xlsx")) {
-                    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                } else if (fileName.endsWith(".xls")) {
-                    return "application/vnd.ms-excel";
-                } else if (fileName.endsWith(".pptx")) {
-                    return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-                } else if (fileName.endsWith(".ppt")) {
-                    return "application/vnd.ms-powerpoint";
-                } else if (fileName.endsWith(".txt")) {
-                    return "text/plain";
-                } else if (fileName.endsWith(".rtf")) {
-                    return "application/rtf";
-                } else {
-                    log.warn("Неизвестный тип документа: {}", fileName);
-                    return "application/octet-stream";
-                }
-            case "IMAGE":
-                if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
-                    return "image/jpeg";
-                } else if (fileName.endsWith(".png")) {
-                    return "image/png";
-                } else if (fileName.endsWith(".gif")) {
-                    return "image/gif";
-                } else {
-                    return "image/jpeg";
-                }
-            default:
-                log.warn("Неизвестный тип файла: {}", typeName);
-                return "application/octet-stream";
+        if (fileName.endsWith(".pdf")) {
+            return "application/pdf";
+        } else if (fileName.endsWith(".docx")) {
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        } else if (fileName.endsWith(".doc")) {
+            return "application/msword";
+        } else if (fileName.endsWith(".xlsx")) {
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        } else if (fileName.endsWith(".xls")) {
+            return "application/vnd.ms-excel";
+        } else if (fileName.endsWith(".pptx")) {
+            return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        } else if (fileName.endsWith(".ppt")) {
+            return "application/vnd.ms-powerpoint";
+        } else if (fileName.endsWith(".txt")) {
+            return "text/plain";
+        } else if (fileName.endsWith(".rtf")) {
+            return "application/rtf";
+        } else if (fileName.endsWith(".mp4")) {
+            return "video/mp4";
+        } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (fileName.endsWith(".png")) {
+            return "image/png";
+        } else if (fileName.endsWith(".gif")) {
+            return "image/gif";
+        } else {
+            log.warn("Неизвестный тип файла: {}", fileName);
+            return "application/octet-stream";
         }
     }
 } 

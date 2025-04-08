@@ -2,6 +2,7 @@ package com.almazbekov.SkillUp.DTO;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
 @Data
 public class MaterialCreateDTO {
@@ -9,5 +10,5 @@ public class MaterialCreateDTO {
     private Long typeId;
     private String title;
     private String description;
-    private MultipartFile file;
+    private List<MultipartFile> files;
 } 

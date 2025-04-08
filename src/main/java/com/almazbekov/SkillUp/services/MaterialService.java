@@ -7,6 +7,7 @@ import com.almazbekov.SkillUp.entity.MaterialType;
 import com.almazbekov.SkillUp.repository.CourseRepository;
 import com.almazbekov.SkillUp.repository.MaterialRepository;
 import com.almazbekov.SkillUp.repository.MaterialTypeRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,6 +26,7 @@ public class MaterialService {
     private final CourseRepository courseRepository;
     private final MaterialTypeRepository materialTypeRepository;
     private final FileStorageService fileStorageService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public Material createMaterial(MaterialCreateDTO materialDTO) throws IOException {
@@ -50,9 +53,18 @@ public class MaterialService {
             throw new IllegalArgumentException("Unsupported material type");
         }
 
-        // Сохраняем файл
-        String fileUrl = fileStorageService.storeFile(materialDTO.getFile(), subDirectory);
-        material.setUrl(fileUrl);
+        // Сохраняем все файлы
+        List<String> fileUrls = new ArrayList<>();
+        if (materialDTO.getFiles() != null) {
+            for (MultipartFile file : materialDTO.getFiles()) {
+                String fileUrl = fileStorageService.storeFile(file, subDirectory);
+                fileUrls.add(fileUrl);
+            }
+        }
+
+        // Преобразуем список URL'ов в JSON
+        String jsonUrls = objectMapper.writeValueAsString(fileUrls);
+        material.setUrl(jsonUrls);
 
         return materialRepository.save(material);
     }
@@ -65,10 +77,13 @@ public class MaterialService {
         material.setTitle(materialDTO.getTitle());
         material.setDescription(materialDTO.getDescription());
 
-        // Обновляем файл, если он был изменен
-        if (materialDTO.getFile() != null) {
-            // Удаляем старый файл
-            fileStorageService.deleteFile(material.getUrl());
+        // Обновляем файлы, если они были изменены
+        if (materialDTO.getFiles() != null && !materialDTO.getFiles().isEmpty()) {
+            // Удаляем старые файлы
+            List<String> oldUrls = objectMapper.readValue(material.getUrl(), List.class);
+            for (String oldUrl : oldUrls) {
+                fileStorageService.deleteFile(oldUrl);
+            }
 
             // Определяем поддиректорию в зависимости от типа материала
             String subDirectory;
@@ -80,9 +95,16 @@ public class MaterialService {
                 throw new IllegalArgumentException("Unsupported material type");
             }
 
-            // Сохраняем новый файл
-            String fileUrl = fileStorageService.storeFile(materialDTO.getFile(), subDirectory);
-            material.setUrl(fileUrl);
+            // Сохраняем новые файлы
+            List<String> newUrls = new ArrayList<>();
+            for (MultipartFile file : materialDTO.getFiles()) {
+                String fileUrl = fileStorageService.storeFile(file, subDirectory);
+                newUrls.add(fileUrl);
+            }
+
+            // Сохраняем новые URL'ы в JSON
+            String jsonUrls = objectMapper.writeValueAsString(newUrls);
+            material.setUrl(jsonUrls);
         }
 
         return materialRepository.save(material);
@@ -93,8 +115,11 @@ public class MaterialService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new RuntimeException("Material not found"));
 
-        // Удаляем файл
-        fileStorageService.deleteFile(material.getUrl());
+        // Удаляем все файлы
+        List<String> urls = objectMapper.readValue(material.getUrl(), List.class);
+        for (String url : urls) {
+            fileStorageService.deleteFile(url);
+        }
 
         materialRepository.delete(material);
     }
@@ -116,8 +141,37 @@ public class MaterialService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getMaterialFile(Long materialId) throws IOException {
+    public Resource getMaterialFile(Long materialId, int fileIndex) throws IOException {
         Material material = getMaterialById(materialId);
-        return fileStorageService.loadFileAsResource(material.getUrl());
+        if (material == null) {
+            throw new RuntimeException("Материал не найден");
+        }
+
+        List<String> urls;
+        try {
+            urls = objectMapper.readValue(material.getUrl(), List.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при чтении URL файлов: " + e.getMessage());
+        }
+
+        if (urls == null || urls.isEmpty()) {
+            throw new RuntimeException("Нет файлов для материала");
+        }
+
+        if (fileIndex < 0 || fileIndex >= urls.size()) {
+            throw new RuntimeException("Неверный индекс файла");
+        }
+
+        String fileUrl = urls.get(fileIndex);
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
+            throw new RuntimeException("URL файла пустой");
+        }
+
+        Resource resource = fileStorageService.loadFileAsResource(fileUrl);
+        if (resource == null || !resource.exists()) {
+            throw new RuntimeException("Файл не найден по указанному пути");
+        }
+
+        return resource;
     }
 } 
