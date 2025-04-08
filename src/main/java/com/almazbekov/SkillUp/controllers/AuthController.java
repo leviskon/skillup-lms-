@@ -12,27 +12,25 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.authentication.AuthenticationManager;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.springframework.security.authentication.AuthenticationManager;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
     private final UserService userService;
     private final UserRepository userRepository;
@@ -45,6 +43,8 @@ public class AuthController {
                                  HttpSession session,
                                  HttpServletResponse httpResponse) {
         try {
+            log.info("Попытка входа пользователя с email: {}", request.getEmail());
+            
             // Аутентифицируем пользователя
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -71,27 +71,18 @@ public class AuthController {
             Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
             sessionCookie.setPath("/");
             sessionCookie.setHttpOnly(true);
-            sessionCookie.setMaxAge(86400); // 24 часа
+            sessionCookie.setMaxAge(86400);
             sessionCookie.setSecure(false);
             sessionCookie.setDomain("localhost");
             httpResponse.addCookie(sessionCookie);
 
-            // Логируем информацию о сессии и куках
-            System.out.println("=== Информация о сессии после логина ===");
-            System.out.println("ID сессии: " + session.getId());
-            System.out.println("Время создания сессии: " + session.getCreationTime());
-            System.out.println("Последний доступ к сессии: " + session.getLastAccessedTime());
-            System.out.println("Максимальное время неактивности: " + session.getMaxInactiveInterval());
-            System.out.println("Пользователь в сессии: " + session.getAttribute("user"));
-            System.out.println("Аутентификация: " + authentication);
-            System.out.println("Роли: " + authentication.getAuthorities());
-            
-            System.out.println("\n=== Куки после логина ===");
-            System.out.println("JSESSIONID = " + session.getId());
-            System.out.println("Path = /");
-            System.out.println("HttpOnly = true");
-            System.out.println("MaxAge = 86400");
-            System.out.println("Domain = localhost");
+            // Логируем информацию о сессии
+            log.info("Сессия успешно создана: ID={}, время создания={}, время жизни={}",
+                    session.getId(), session.getCreationTime(), session.getMaxInactiveInterval());
+            log.info("Пользователь успешно аутентифицирован: email={}, роль={}",
+                    user.getEmail(), user.getRole().getName());
+            log.info("Куки успешно установлены: JSESSIONID={}, Path=/, HttpOnly=true, MaxAge=86400, Domain=localhost",
+                    session.getId());
 
             // Создаем ответ с данными пользователя
             Map<String, Object> response = new HashMap<>();
@@ -101,6 +92,8 @@ public class AuthController {
                 .header("Set-Cookie", "JSESSIONID=" + session.getId() + "; Path=/; HttpOnly; Max-Age=86400; Domain=localhost")
                 .body(response);
         } catch (AuthenticationException e) {
+            log.error("Ошибка аутентификации пользователя: email={}, причина={}",
+                    request.getEmail(), e.getMessage());
             return ResponseEntity.badRequest().body("Неверный email или пароль");
         }
     }
@@ -110,12 +103,17 @@ public class AuthController {
                                         HttpSession session,
                                         HttpServletRequest httpRequest,
                                         HttpServletResponse httpResponse) {
+        log.info("Попытка регистрации нового пользователя: email={}, имя={}, роль={}",
+                request.getEmail(), request.getName(), request.getRole());
+
         if (userRepository.existsByEmail(request.getEmail())) {
+            log.error("Email уже зарегистрирован: {}", request.getEmail());
             return ResponseEntity.badRequest().body("Email уже зарегистрирован");
         }
 
         Optional<Role> roleOptional = roleRepository.findByName(request.getRole());
         if (roleOptional.isEmpty()) {
+            log.error("Роль не найдена: {}", request.getRole());
             return ResponseEntity.badRequest().body("Указанная роль не найдена");
         }
 
@@ -125,42 +123,20 @@ public class AuthController {
         user.setName(request.getName());
         user.setRole(roleOptional.get());
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        log.info("Пользователь успешно зарегистрирован: email={}, имя={}, роль={}",
+                savedUser.getEmail(), savedUser.getName(), savedUser.getRole().getName());
 
         // Сохраняем пользователя в сессии
-        session.setAttribute("user", user);
+        session.setAttribute("user", savedUser);
 
-        // Логируем информацию о сессии и куках
-        System.out.println("=== Информация о сессии после регистрации ===");
-        System.out.println("ID сессии: " + session.getId());
-        System.out.println("Время создания сессии: " + session.getCreationTime());
-        System.out.println("Последний доступ к сессии: " + session.getLastAccessedTime());
-        System.out.println("Максимальное время неактивности: " + session.getMaxInactiveInterval());
-        System.out.println("Пользователь в сессии: " + session.getAttribute("user"));
-        
-        // Логируем все куки
-        System.out.println("\n=== Куки после регистрации ===");
-        Cookie[] cookies = httpRequest.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                System.out.println("Имя куки: " + cookie.getName());
-                System.out.println("Значение куки: " + cookie.getValue());
-                System.out.println("Домен: " + cookie.getDomain());
-                System.out.println("Путь: " + cookie.getPath());
-                System.out.println("Максимальный возраст: " + cookie.getMaxAge());
-                System.out.println("HttpOnly: " + cookie.isHttpOnly());
-                System.out.println("Secure: " + cookie.getSecure());
-                System.out.println("---");
-            }
-        } else {
-            System.out.println("Куки не найдены");
-        }
+        // Логируем информацию о сессии
+        log.info("Сессия успешно создана: ID={}, время создания={}, время жизни={}",
+                session.getId(), session.getCreationTime(), session.getMaxInactiveInterval());
+        log.info("Куки успешно установлены: JSESSIONID={}, Path=/, HttpOnly=true, MaxAge=86400, Domain=localhost",
+                session.getId());
 
-        // Создаем ответ с данными пользователя
-        Map<String, Object> response = new HashMap<>();
-        response.put("user", user);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(savedUser);
     }
 
     @PostMapping("/logout")

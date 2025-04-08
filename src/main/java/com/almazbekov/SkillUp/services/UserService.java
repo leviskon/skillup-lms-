@@ -13,10 +13,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
 @Service
+@Slf4j
 public class UserService implements UserDetailsService {
 
     @Autowired
@@ -36,8 +38,11 @@ public class UserService implements UserDetailsService {
      * Если пользователь с данным email уже существует, выбрасывается исключение.
      */
     public User registerUser(String email, String password) {
+        log.info("Попытка регистрации пользователя с email: {}", email);
+        
         // Проверяем, существует ли пользователь с таким email
         if (userRepository.findByEmail(email).isPresent()) {
+            log.error("Email уже занят: {}", email);
             throw new RuntimeException("Email already taken");
         }
 
@@ -55,7 +60,9 @@ public class UserService implements UserDetailsService {
         newUser.setRole(role);
 
         // Сохраняем пользователя в базу данных
-        return userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+        log.info("Пользователь успешно зарегистрирован: {}", savedUser.getEmail());
+        return savedUser;
     }
 
     /**
@@ -63,9 +70,12 @@ public class UserService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.info("Попытка загрузки пользователя по email: {}", email);
+        
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        log.info("Пользователь успешно загружен: {}", user.getEmail());
         // Преобразуем User в объект UserDetails
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
@@ -78,12 +88,15 @@ public class UserService implements UserDetailsService {
      * Метод для обновления профиля пользователя
      */
     public User updateUserProfile(Long userId, UserUpdateDTO updateDTO) throws IOException {
+        log.info("Попытка обновления профиля пользователя с ID: {}", userId);
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
         // Проверяем, не занят ли email другим пользователем
         if (updateDTO.getEmail() != null && !updateDTO.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(updateDTO.getEmail())) {
+                log.error("Email уже занят: {}", updateDTO.getEmail());
                 throw new RuntimeException("Email уже занят");
             }
             user.setEmail(updateDTO.getEmail());
@@ -96,18 +109,27 @@ public class UserService implements UserDetailsService {
 
         // Обрабатываем загрузку аватара
         if (updateDTO.getAvatarFile() != null && !updateDTO.getAvatarFile().isEmpty()) {
+            log.info("Загрузка нового аватара для пользователя: {}", user.getEmail());
             String avatarUrl = fileStorageService.storeFile(updateDTO.getAvatarFile(), "avatars");
             user.setAvatarUrl("/avatars/" + avatarUrl);
+            log.info("Аватар успешно загружен: {}", avatarUrl);
         }
 
-        return userRepository.save(user);
+        User updatedUser = userRepository.save(user);
+        log.info("Профиль пользователя успешно обновлен: {}", updatedUser.getEmail());
+        return updatedUser;
     }
 
     /**
      * Метод для получения информации о пользователе
      */
     public User getUserProfile(Long userId) {
-        return userRepository.findById(userId)
+        log.info("Попытка получения профиля пользователя с ID: {}", userId);
+        
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+                
+        log.info("Профиль пользователя успешно получен: {}", user.getEmail());
+        return user;
     }
 }
