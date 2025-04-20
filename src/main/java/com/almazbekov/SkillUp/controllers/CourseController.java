@@ -100,6 +100,17 @@ public class CourseController {
         return ResponseEntity.ok(courseService.getCoursesByUserId(user.getId()));
     }
 
+    @GetMapping
+    public ResponseEntity<List<CourseDTO>> getAllCourses(HttpSession session) {
+        // Получаем пользователя из сессии
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            throw new IllegalStateException("Ошибка: пользователь не аутентифицирован. Необходимо войти в систему.");
+        }
+
+        return ResponseEntity.ok(courseService.getAllCourses());
+    }
+
     @GetMapping("/{courseId}")
     public ResponseEntity<CourseDTO> getCourseById(
             @PathVariable Long courseId,
@@ -112,4 +123,4 @@ public class CourseController {
 
         return ResponseEntity.ok(courseService.getCourseById(courseId));
     }
-} 
+}

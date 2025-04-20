@@ -95,6 +95,12 @@ public class CourseService {
         return convertToDTO(course);
     }
 
+    public List<CourseDTO> getAllCourses() {
+        return courseRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     private CourseDTO convertToDTO(Course course) {
         CourseDTO dto = new CourseDTO();
         dto.setId(course.getId());
@@ -111,4 +117,4 @@ public class CourseService {
         dto.setUpdatedAt(course.getUpdatedAt());
         return dto;
     }
-} 
+}
