@@ -18,13 +18,11 @@ import java.util.UUID;
 @Service
 @Slf4j
 public class FileStorageService {
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
+    
     private final Path fileStorageLocation;
 
-    public FileStorageService() {
-        this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+    public FileStorageService(@Value("${file.upload-dir}") String uploadDir) {
+        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
             log.info("Создана директория для загрузки файлов: {}", this.fileStorageLocation);
@@ -40,7 +38,7 @@ public class FileStorageService {
         String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
         String newFilename = UUID.randomUUID().toString() + fileExtension;
 
-        Path uploadPath = Paths.get(uploadDir, subDirectory).toAbsolutePath().normalize();
+        Path uploadPath = this.fileStorageLocation.resolve(subDirectory).normalize();
         
         Files.createDirectories(uploadPath);
 
@@ -48,7 +46,7 @@ public class FileStorageService {
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
         log.info("Файл успешно сохранен: {}", targetLocation);
-        return newFilename;
+        return subDirectory + "/" + newFilename;
     }
 
     public void deleteFile(String fileUrl) throws IOException {
@@ -86,4 +84,4 @@ public class FileStorageService {
             throw new RuntimeException("File not found: " + fileUrl, ex);
         }
     }
-} 
+}
