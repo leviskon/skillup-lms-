@@ -44,7 +44,14 @@ public class MaterialService {
         material.setPublished(false);
 
         // Определяем поддиректорию в зависимости от типа материала
-        String subDirectory = materialType.getName().equals("VIDEO") ? "materials/videos" : "materials/documents";
+        String subDirectory;
+        if (materialType.getName().equals("VIDEO")) {
+            subDirectory = "materials/videos";
+        } else if (materialType.getName().equals("DOCUMENT")) {
+            subDirectory = "materials/documents";
+        } else {
+            throw new IllegalArgumentException("Unsupported material type");
+        }
 
         // Сохраняем все файлы
         List<String> fileUrls = new ArrayList<>();
@@ -160,21 +167,24 @@ public class MaterialService {
             throw new RuntimeException("URL файла пустой");
         }
 
-        // Определяем поддиректорию на основе типа материала
-        String subDirectory = material.getType().getName().equals("VIDEO") ? 
-            "materials/videos/" : "materials/documents/";
-            
-        // Если URL уже содержит поддиректорию, используем его как есть
-        if (!fileUrl.startsWith("materials/")) {
-            // Если нет, добавляем поддиректорию
-            fileUrl = subDirectory + fileUrl;
+        // Определяем поддиректорию в зависимости от типа материала
+        String subDirectory;
+        if (material.getType().getName().equals("VIDEO")) {
+            subDirectory = "materials/videos";
+        } else if (material.getType().getName().equals("DOCUMENT")) {
+            subDirectory = "materials/documents";
+        } else {
+            throw new IllegalArgumentException("Unsupported material type");
         }
 
-        Resource resource = fileStorageService.loadFileAsResource(fileUrl);
+        // Формируем полный путь к файлу
+        String fullPath = subDirectory + "/" + fileUrl;
+        
+        Resource resource = fileStorageService.loadFileAsResource(fullPath);
         if (resource == null || !resource.exists()) {
-            throw new RuntimeException("Файл не найден: " + fileUrl);
+            throw new RuntimeException("Файл не найден по указанному пути");
         }
 
         return resource;
     }
-}
+} 
