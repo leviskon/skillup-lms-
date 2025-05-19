@@ -20,17 +20,22 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "to_user_id")
+    private Long toUserId;
+
+    @Column(name = "course_id")
+    private Long courseId;
 
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String type;
 
     @Column(name = "is_read")
