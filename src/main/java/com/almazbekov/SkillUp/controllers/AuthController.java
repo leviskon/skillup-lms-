@@ -26,6 +26,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -152,5 +153,11 @@ public class AuthController {
             return ResponseEntity.status(401).body("Пользователь не авторизован");
         }
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return ResponseEntity.ok(users);
     }
 }

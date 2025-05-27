@@ -99,7 +99,7 @@ public class SecurityConfig {
                             }
                             System.out.println("Сессия: " + request.getSession(false));
                             System.out.println("Куки: " + Arrays.toString(request.getCookies()));
-                            System.out.println("=== Конеец ошибки доступа ===\n");
+                            System.out.println("=== Конец ошибки доступа ===\n");
                             response.sendError(403, "Forbidden");
                         }));
 

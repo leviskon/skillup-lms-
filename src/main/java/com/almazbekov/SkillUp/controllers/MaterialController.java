@@ -169,4 +169,21 @@ public class MaterialController {
             return "application/octet-stream";
         }
     }
+
+    @GetMapping("/course/{courseId}/with-files")
+    public ResponseEntity<List<Material>> getMaterialsByCourseWithFiles(@PathVariable Long courseId) {
+        List<Material> materials = materialService.getMaterialsByCourse(courseId);
+        for (Material material : materials) {
+            try {
+                List<String> urls = objectMapper.readValue(material.getUrl(), List.class);
+                if (urls != null && !urls.isEmpty()) {
+                    // Добавляем информацию о доступных файлах
+                    material.setUrl(objectMapper.writeValueAsString(urls));
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при обработке URL файлов для материала {}: {}", material.getId(), e.getMessage());
+            }
+        }
+        return ResponseEntity.ok(materials);
+    }
 } 

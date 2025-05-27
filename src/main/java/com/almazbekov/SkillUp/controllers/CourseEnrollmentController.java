@@ -21,10 +21,10 @@ public class CourseEnrollmentController {
         return ResponseEntity.ok(enrollmentService.enrollStudentInCourse(courseId, studentId));
     }
 
-    @DeleteMapping("/courses/{courseId}/unenroll")
+    @DeleteMapping("/students/{studentId}/unenroll")
     public ResponseEntity<Void> unenrollFromCourse(
-            @PathVariable Long courseId,
-            @RequestParam Long studentId) {
+            @PathVariable Long studentId,
+            @RequestParam Long courseId) {
         enrollmentService.unenrollStudentFromCourse(courseId, studentId);
         return ResponseEntity.ok().build();
     }
