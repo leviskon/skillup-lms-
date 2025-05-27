@@ -1,5 +1,6 @@
 package com.almazbekov.SkillUp.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "course_progress", uniqueConstraints = {
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class CourseProgress {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +35,7 @@ public class CourseProgress {
     private Course course;
 
     @Column(name = "completed_materials")
-    private Integer completedMaterials = 0;
+    private List<Long> completedMaterials;
 
     @Column(name = "total_materials")
     private Integer totalMaterials = 0;

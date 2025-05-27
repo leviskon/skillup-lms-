@@ -6,5 +6,6 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <include file="db/changelog/changes/00-create-all-tables.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/01-alter-course_progress-completed_materials.sql" relativeToChangelogFile="false"/>
     
 </databaseChangeLog> 
