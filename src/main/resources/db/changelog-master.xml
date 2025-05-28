@@ -7,5 +7,6 @@
     
     <include file="db/changelog/changes/00-create-all-tables.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/01-alter-course_progress-completed_materials.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/02-alter-assignments-table.sql" relativeToChangelogFile="false"/>
     
 </databaseChangeLog> 

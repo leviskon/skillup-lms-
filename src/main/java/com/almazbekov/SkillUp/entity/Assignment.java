@@ -26,13 +26,16 @@ public class Assignment {
     private Course course;
 
     @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false)
     private String description;
 
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
-    @Column(name = "max_score")
-    private Integer maxScore = 100;
+    @Column(name = "url")
+    private String url;
 
     @Column(name = "is_published")
     private boolean isPublished = false;
