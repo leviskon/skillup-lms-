@@ -1,6 +1,7 @@
 package com.almazbekov.SkillUp.controllers;
 
 import com.almazbekov.SkillUp.DTO.SubmissionCreateDTO;
+import com.almazbekov.SkillUp.DTO.SubmissionResponseDTO;
 import com.almazbekov.SkillUp.entity.Submission;
 import com.almazbekov.SkillUp.security.CustomUserDetails;
 import com.almazbekov.SkillUp.services.SubmissionService;
@@ -61,10 +62,9 @@ public class SubmissionController {
     }
 
     @GetMapping("/assignment/{assignmentId}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
-    public ResponseEntity<List<Submission>> getSubmissionsByAssignment(@PathVariable Long assignmentId) {
-        log.info("Получение отправок для задания: {}", assignmentId);
-        List<Submission> submissions = submissionService.getSubmissionsByAssignment(assignmentId);
+    public ResponseEntity<List<SubmissionResponseDTO>> getSubmissionsByAssignmentId(
+            @PathVariable Long assignmentId) {
+        List<SubmissionResponseDTO> submissions = submissionService.getSubmissionsByAssignmentId(assignmentId);
         return ResponseEntity.ok(submissions);
     }
 

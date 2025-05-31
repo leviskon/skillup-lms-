@@ -1,6 +1,7 @@
 package com.almazbekov.SkillUp.services;
 
 import com.almazbekov.SkillUp.DTO.SubmissionCreateDTO;
+import com.almazbekov.SkillUp.DTO.SubmissionResponseDTO;
 import com.almazbekov.SkillUp.entity.Assignment;
 import com.almazbekov.SkillUp.entity.Submission;
 import com.almazbekov.SkillUp.entity.User;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -110,5 +112,20 @@ public class SubmissionService {
         }
 
         return resource;
+    }
+
+    public List<SubmissionResponseDTO> getSubmissionsByAssignmentId(Long assignmentId) {
+        List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);
+        return submissions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private SubmissionResponseDTO convertToDTO(Submission submission) {
+        SubmissionResponseDTO dto = new SubmissionResponseDTO();
+        dto.setSubmission(submission);
+        dto.setAssignment(submission.getAssignment());
+        dto.setStudent(submission.getStudent());
+        return dto;
     }
 } 
