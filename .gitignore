@@ -31,3 +31,22 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Uploads directory
+uploads/
+
+# Logs
+*.log
+
+# Application properties
+application-*.properties
+!application.properties
+
+# Compiled files
+*.class
+*.jar
+*.war
+
+# Temporary files
+*.tmp
+*.temp
